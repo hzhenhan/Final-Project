@@ -1,0 +1,90 @@
+#Final project
+####Zhenhan Huang
+####January 10, 2016
+
+
+##Setup
+
+```{r, cache=TRUE, results='hide'}
+library(rpart)
+library(caret)
+library(gbm)
+library(AppliedPredictiveModeling)
+
+rm(list=ls())
+set.seed(123)
+```
+
+
+
+##Reading data
+
+```{r, cache=TRUE, results='hide'}
+training <-read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv', na.strings=c('NA','','#DIV/0!'))
+testing <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv', na.strings=c('NA','','#DIV/0!'))
+```
+
+
+##Process data
+
+```{r, warning=F, results='hide'}
+training <- training[,colSums(is.na(training))<0.8*nrow(training)]
+dim(training)
+```
+
+```{r, warning=F, results='hide'}
+training <- training[,-(1:6)]
+```
+
+##Formation of Dataset
+
+```{r, warning=F, results='hide'}
+dim(training)
+```
+
+```{r, warning=F, results='hide'}
+unique(training$classe)
+```
+
+```{r, warning=F, results='hide'}
+sub <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+Training_subset <- training[sub, ] 
+Testing_subset <- training[-sub, ]
+```
+
+##Decision Tree
+```{r}
+modDT <- rpart(classe ~., data=Training_subset, method="class")
+predDT <-predict(modDT, Testing_subset, type = "class")
+confusionMatrix(predDT, Testing_subset$classe)
+```
+
+##Random Forest
+
+```{r, cache=TRUE, results='hide'}
+modRF <- train(classe~. , data = Training_subset, method="rf")
+```
+
+```{r}
+predRF <- predict(modRF, Testing_subset)
+confusionMatrix(predRF, Testing_subset$classe)
+```
+
+##Quiz
+```{r}
+answers <- predict(modRF, testing)
+answers
+```
+
+##Submission
+```{r, cache=TRUE, results='hide'}
+pml_write_files = function(x){
+n = length(x)
+for(i in 1:n){
+filename = paste0("problem_id_",i,".txt")
+write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+}
+}
+
+pml_write_files(answers)
+```
